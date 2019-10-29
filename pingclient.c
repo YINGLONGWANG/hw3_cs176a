@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include <sys/time.h>
 char * get_message();
 
 
@@ -31,13 +33,18 @@ int main(int argc, char * argv[]) {
 }
 
 char * get_message(){
-	/*time_t seconds = time(NULL);
-	stringstream ss;
-        ss << seconds;
-        string converted_time = ss.str();
-	*/
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	long double millisecondsSinceEpoch =
+    		(long double)(tv.tv_sec) * 1000 +
+    		(long double)(tv.tv_usec) / 1000;
+	char* time = malloc(100);
+	sprintf(time, "%Lf", millisecondsSinceEpoch);
 
-	char * message= malloc(40);
-	strcpy(message, "test");
+	char * message= malloc(400);
+	strcpy(message, "PING ");
+	strcat(message, time);
+	
+
 	return message;
 }
