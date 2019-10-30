@@ -7,27 +7,36 @@
 #include <time.h>
 #include <sys/time.h>
 char * get_message(int seq_num, long double millisecondsSinceEpoch);
+void print_rtt(long double rtt, int seq_num, char *ip);
 long double get_time();
 
 int main(int argc, char * argv[]) {
 	struct sockaddr_in server_address, return_address;
 	
-	char server_ip[] = "127.0.0.1";
-	int port = 12000;
+	char * server_ip = malloc(400); 
+	strcpy(server_ip, argv[1]);
+	
+	int port = atoi(argv[2]);
 	int i = 1;
 	int socket_id = socket(AF_INET, SOCK_DGRAM, 0);
 	server_address.sin_family = AF_INET;
 	server_address.sin_addr.s_addr = inet_addr( server_ip );
  	server_address.sin_port = htons(port);
-	
+	long double total_rtt = 0;
+	int total_received = 0;
+	int packets_lost = 0;
+	long double min_rtt = 10000;
+	long double max_rtt = 0;
+
+
 	while (i<11){
 		long double send_time = get_time(); 
 		const char * message = get_message(i, send_time);
 	
-		printf("Sending '%s' to %s:%i\n", message, server_ip, port);
+		//printf("Sending '%s' to %s:%i\n", message, server_ip, port);
 		sendto( socket_id, message, strlen(message), 0,
 			(struct sockaddr *) &server_address, sizeof(struct sockaddr_in) );
-		printf("Waiting for Response\n");
+		//printf("Waiting for Response\n");
 		
 		struct timeval tv;
 		tv.tv_sec = 1;
@@ -37,31 +46,33 @@ int main(int argc, char * argv[]) {
 		int result = recvfrom( socket_id, message, strlen(message), 0,
 			(struct sockaddr *) &return_address, &return_len );
 		if (result<0)
+		{
 			printf("Request timeout for icmp_seq %d\n", i);
+			packets_lost++;
+		}
 		else
 		{
-			//want to print:
-			//PING received form machine_name: seq# = X time = Y
-			//not sure if I can store the return time. would def
-			//be easier
-			/*int space_number = 0;
-			for (int j = 0; j<stren(message); j++)
-			{
-				if (message[i] = " ")
-					space_number++;
-				if(space_number
-				
-			}*/
+			
+			long double return_time = get_time();
+			long double rtt = return_time - send_time;
+
+			printf("PING received from %s: seq #=%d time=%Lf ms\n", server_ip, i, rtt);
+			total_rtt+= rtt;
+			total_received++;
+			if (rtt<min_rtt)
+				min_rtt = rtt;
+			if (rtt>max_rtt)
+				max_rtt = rtt;
+
 		}
 
-		//if result < 0, then timeout occurred
-		//else, teimout did not occur
-		//set sockopt ensures that result returns less than 0 if a timeout is reached.
-		
-
-		printf("Received '%s'\n", message);
 	i++;
 	}
+	int packet_loss = 100*(packets_lost/10.00);
+	long double average = total_rtt/((double)total_received);
+
+	printf("10 packets transmitted, %d recieved, %d%% packet loss rtt min/avg/max = %Lf %Lf %Lf\n", total_received, packet_loss, min_rtt, average, max_rtt);	
+
 	close(socket_id);
 }
 
@@ -73,6 +84,7 @@ long double get_time(){
  		(long double)(tv.tv_usec) / 1000;
  	return millisecondsSinceEpoch;
 }
+
 
 char * get_message(int seq_num, long double millisecondsSinceEpoch){
 	char* time = malloc(100);
