@@ -14,36 +14,38 @@ int main(int argc, char * argv[]) {
 	
 	char server_ip[] = "127.0.0.1";
 	int port = 12000;
-	
-	const char * message = get_message(1);
+	int i = 0;
 	int socket_id = socket(AF_INET, SOCK_DGRAM, 0);
-
 	server_address.sin_family = AF_INET;
 	server_address.sin_addr.s_addr = inet_addr( server_ip );
-	server_address.sin_port = htons(port);
+ 	server_address.sin_port = htons(port);
 	
-/*	int i = 0;
-	while(i<10)
-	{
+	while (i<10){
+		const char * message = get_message(i);
+	
+		printf("Sending '%s' to %s:%i\n", message, server_ip, port);
+		sendto( socket_id, message, strlen(message), 0,
+			(struct sockaddr *) &server_address, sizeof(struct sockaddr_in) );
+		printf("Waiting for Response\n");
+		
+		struct timeval tv;
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
+		setsockopt(socket_id, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv));
+		unsigned int return_len;
+		int result = recvfrom( socket_id, message, strlen(message), 0,
+			(struct sockaddr *) &return_address, &return_len );
+		if (result<0)
+			printf("error\n");
+
+		//if result < 0, then timeout occurred
+		//else, teimout did not occur
+		//set sockopt ensures that result returns less than 0 if a timeout is reached.
 		
 
-
-
-
-
+		printf("Received '%s'\n", message);
+	i++;
 	}
-
-
-
-*/
-	printf("Sending '%s' to %s:%i\n", message, server_ip, port);
-	sendto( socket_id, message, strlen(message), 0,
-		(struct sockaddr *) &server_address, sizeof(struct sockaddr_in) );
-	printf("Waiting for Response\n");
-	unsigned int return_len;
-	recvfrom( socket_id, message, strlen(message), 0,
-		(struct sockaddr *) &return_address, &return_len );
-	printf("Received '%s'\n", message);
 	close(socket_id);
 }
 
