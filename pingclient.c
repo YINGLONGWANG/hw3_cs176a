@@ -70,8 +70,11 @@ int main(int argc, char * argv[]) {
 	}
 	int packet_loss = 100*(packets_lost/10.00);
 	long double average = total_rtt/((double)total_received);
-
-	printf("10 packets transmitted, %d recieved, %d%% packet loss rtt min/avg/max = %Lf %Lf %Lf ms\n", total_received, packet_loss, min_rtt, average, max_rtt);	
+	
+	if (total_received>0)
+		printf("10 packets transmitted, %d recieved, %d%% packet loss rtt min/avg/max = %Lf %Lf %Lf ms\n", total_received, packet_loss, min_rtt, average, max_rtt);	
+	else
+		printf("10 packets transmitted, %d recieved, 100%% packet loss rtt min/avg/max = undefined undefined undefined ms\n", total_received);	
 
 	close(socket_id);
 }
